@@ -1,1 +1,0 @@
-# studiora-student-management-system
