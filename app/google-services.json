@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "467216580620",
+    "project_id": "studiora-d0a33",
+    "storage_bucket": "studiora-d0a33.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:467216580620:android:4cfa719e0e861c533eee29",
+        "android_client_info": {
+          "package_name": "com.example.studiora"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6z9ybznHOywzl0QQ-oQbaCDoGYHHsF28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
