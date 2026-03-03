@@ -8,11 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,28 +19,64 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.example.studiora.ui.common.AppLogo
+import com.example.studiora.viewmodel.AuthViewModel
+import com.example.studiora.viewmodel.RegisterState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationScreen(navController: NavController) {
-    var name by remember { mutableStateOf("") }
+fun OrganizationRegisterScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel
+) {
+    var orgName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    val registerState by authViewModel.registerState.collectAsStateWithLifecycle()
+    val isLoading = registerState is RegisterState.Loading
+
+    // Handle state changes
+    LaunchedEffect(registerState) {
+        when (val state = registerState) {
+            is RegisterState.Success -> {
+                Toast.makeText(context, "Organization registered successfully!", Toast.LENGTH_SHORT).show()
+                authViewModel.resetRegisterState()
+                // Navigate to admin dashboard and clear back stack
+                navController.navigate("admin_dashboard") {
+                    popUpTo("org_register") { inclusive = true }
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            is RegisterState.Error -> {
+                val msg = when {
+                    state.message.contains("already in use", ignoreCase = true) ->
+                        "This email is already registered. Please login."
+                    state.message.contains("network", ignoreCase = true) ->
+                        "Network error. Check your internet connection."
+                    else -> state.message
+                }
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                authViewModel.resetRegisterState()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Account", fontWeight = FontWeight.SemiBold) },
+                title = { Text("Register Organization", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -64,7 +96,7 @@ fun RegistrationScreen(navController: NavController) {
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                             MaterialTheme.colorScheme.background
                         )
                     )
@@ -74,30 +106,54 @@ fun RegistrationScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(24.dp)
+                    .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Logo
+                AppLogo(size = 90.dp)
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "Join Studiora",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Header
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.AdminPanelSettings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                "Organization Account",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                "Full admin access to manage teachers, students & classes",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                textAlign = TextAlign.Start
+                            )
+                        }
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Text(
-                    text = "Create your account to get started",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Registration Card
+                // Form Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -108,16 +164,18 @@ fun RegistrationScreen(navController: NavController) {
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Name Field
+
+                        // Organization Name
                         OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            label = { Text("Full Name") },
+                            value = orgName,
+                            onValueChange = { orgName = it },
+                            label = { Text("Organization Name") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Person,
+                                    Icons.Default.Business,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -132,16 +190,14 @@ fun RegistrationScreen(navController: NavController) {
                             enabled = !isLoading
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Email Field
+                        // Email
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
                             label = { Text("Email Address") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Email,
+                                    Icons.Default.Email,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -156,16 +212,36 @@ fun RegistrationScreen(navController: NavController) {
                             enabled = !isLoading
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        // Phone
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            label = { Text("Phone Number") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            ),
+                            enabled = !isLoading
+                        )
 
-                        // Password Field
+                        // Password
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
                             label = { Text("Password") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Lock,
+                                    Icons.Default.Lock,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -173,8 +249,8 @@ fun RegistrationScreen(navController: NavController) {
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(
-                                        imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                        if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = if (passwordVisible) "Hide" else "Show"
                                     )
                                 }
                             },
@@ -189,16 +265,14 @@ fun RegistrationScreen(navController: NavController) {
                             enabled = !isLoading
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Confirm Password Field
+                        // Confirm Password
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
                             label = { Text("Confirm Password") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Lock,
+                                    Icons.Default.Lock,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -206,8 +280,8 @@ fun RegistrationScreen(navController: NavController) {
                             trailingIcon = {
                                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                                     Icon(
-                                        imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                        contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                                        if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = if (confirmPasswordVisible) "Hide" else "Show"
                                     )
                                 }
                             },
@@ -222,78 +296,30 @@ fun RegistrationScreen(navController: NavController) {
                             enabled = !isLoading
                         )
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         // Register Button
                         Button(
                             onClick = {
                                 when {
-                                    name.isEmpty() -> {
-                                        Toast.makeText(context, "Please enter your name", Toast.LENGTH_SHORT).show()
-                                    }
-                                    email.isEmpty() -> {
-                                        Toast.makeText(context, "Please enter your email", Toast.LENGTH_SHORT).show()
-                                    }
-                                    !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                                        Toast.makeText(context, "Please enter a valid email", Toast.LENGTH_SHORT).show()
-                                    }
-                                    password.isEmpty() -> {
-                                        Toast.makeText(context, "Please enter a password", Toast.LENGTH_SHORT).show()
-                                    }
-                                    password.length < 8 -> {
+                                    orgName.isEmpty() ->
+                                        Toast.makeText(context, "Enter organization name", Toast.LENGTH_SHORT).show()
+                                    email.isEmpty() ->
+                                        Toast.makeText(context, "Enter email address", Toast.LENGTH_SHORT).show()
+                                    !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
+                                        Toast.makeText(context, "Enter a valid email address", Toast.LENGTH_SHORT).show()
+                                    password.isEmpty() ->
+                                        Toast.makeText(context, "Enter a password", Toast.LENGTH_SHORT).show()
+                                    password.length < 8 ->
                                         Toast.makeText(context, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show()
-                                    }
-                                    !password.any { it.isUpperCase() } -> {
+                                    !password.any { it.isUpperCase() } ->
                                         Toast.makeText(context, "Password must contain at least 1 uppercase letter", Toast.LENGTH_SHORT).show()
-                                    }
-                                    !password.any { it.isDigit() } -> {
+                                    !password.any { it.isDigit() } ->
                                         Toast.makeText(context, "Password must contain at least 1 number", Toast.LENGTH_SHORT).show()
-                                    }
-                                    password != confirmPassword -> {
+                                    password != confirmPassword ->
                                         Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
-                                    }
-                                    else -> {
-                                        isLoading = true
-                                        FirebaseAuth.getInstance()
-                                            .createUserWithEmailAndPassword(email, password)
-                                            .addOnCompleteListener { task ->
-                                                if (task.isSuccessful) {
-                                                    val userId = task.result?.user?.uid
-                                                    val userMap = hashMapOf(
-                                                        "name" to name,
-                                                        "email" to email,
-                                                        "userId" to userId
-                                                    )
-
-                                                    FirebaseDatabase.getInstance()
-                                                        .reference
-                                                        .child("users")
-                                                        .child(userId!!)
-                                                        .setValue(userMap)
-                                                        .addOnCompleteListener { dbTask ->
-                                                            isLoading = false
-                                                            if (dbTask.isSuccessful) {
-                                                                Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
-                                                                navController.navigate("dashboard") {
-                                                                    popUpTo("register") { inclusive = true }
-                                                                }
-                                                            } else {
-                                                                Toast.makeText(context, "Failed to save user data", Toast.LENGTH_SHORT).show()
-                                                            }
-                                                        }
-                                                } else {
-                                                    isLoading = false
-                                                    val errorMessage = when {
-                                                        task.exception?.message?.contains("already in use") == true ->
-                                                            "Email already registered. Please login."
-                                                        task.exception?.message?.contains("network") == true ->
-                                                            "Network error. Check your connection."
-                                                        else -> "Registration failed. Please try again."
-                                                    }
-                                                    Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
-                                                }
-                                            }
-                                    }
+                                    else ->
+                                        authViewModel.registerOrganization(orgName, email, password, phone)
                                 }
                             },
                             modifier = Modifier
@@ -312,8 +338,14 @@ fun RegistrationScreen(navController: NavController) {
                                     strokeWidth = 2.dp
                                 )
                             } else {
+                                Icon(
+                                    Icons.Default.AdminPanelSettings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Register",
+                                    "Register Organization",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -322,29 +354,21 @@ fun RegistrationScreen(navController: NavController) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Login Link
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                // Back to login
+                TextButton(
+                    onClick = { navController.popBackStack() },
+                    enabled = !isLoading
                 ) {
                     Text(
-                        "Already have an account?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "Already have an account? Login",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    TextButton(
-                        onClick = { navController.popBackStack() },
-                        enabled = !isLoading
-                    ) {
-                        Text(
-                            "Login",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

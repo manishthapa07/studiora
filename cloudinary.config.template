@@ -1,0 +1,14 @@
+# Cloudinary Configuration Template
+# Copy this file to local.properties and fill in your credentials
+# local.properties is already in .gitignore and won't be committed
+
+# Get these from https://cloudinary.com/console
+cloudinary.cloud.name=YOUR_CLOUD_NAME_HERE
+cloudinary.api.key=YOUR_API_KEY_HERE
+cloudinary.api.secret=YOUR_API_SECRET_HERE
+
+# Example:
+# cloudinary.cloud.name=myapp-cloud
+# cloudinary.api.key=123456789012345
+# cloudinary.api.secret=abcdefghijklmnopqrstuvwxyz123456
+

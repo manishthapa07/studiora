@@ -11,32 +11,45 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryBlueDark,
-    secondary = AccentOrangeDark,
-    tertiary = AccentOrangeLight,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    onPrimary = OnPrimaryDark,
-    onSecondary = OnPrimary,
-    onTertiary = OnPrimary,
-    onBackground = OnSurfaceDark,
-    onSurface = OnSurfaceDark,
-    error = ErrorColor
+    primary              = PrimaryBlueDark,
+    onPrimary            = OnPrimaryDark,
+    primaryContainer     = PrimaryContainerDark,
+    onPrimaryContainer   = PrimaryBlueDark,
+    secondary            = AccentOrangeDark,
+    onSecondary          = OnPrimary,
+    secondaryContainer   = SecondaryContainerDark,
+    onSecondaryContainer = AccentOrangeDark,
+    tertiary             = AccentOrangeLight,
+    onTertiary           = OnPrimary,
+    background           = BackgroundDark,
+    onBackground         = OnSurfaceDark,
+    surface              = SurfaceDark,
+    onSurface            = OnSurfaceDark,
+    surfaceVariant       = SurfaceVariantDark,
+    onSurfaceVariant     = OnSurfaceDark.copy(alpha = 0.7f),
+    outline              = OutlineColor.copy(alpha = 0.4f),
+    error                = ErrorColor
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryBlue,
-    secondary = AccentOrange,
-    tertiary = AccentOrangeLight,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    onPrimary = OnPrimary,
-    onSecondary = OnPrimary,
-    onTertiary = OnPrimary,
-    onBackground = OnSurface,
-    onSurface = OnSurface,
-    onSurfaceVariant = OnSurfaceVariant,
-    error = ErrorColor
+    primary              = PrimaryBlue,
+    onPrimary            = OnPrimary,
+    primaryContainer     = PrimaryContainerLight,
+    onPrimaryContainer   = PrimaryBlue,
+    secondary            = AccentOrange,
+    onSecondary          = OnPrimary,
+    secondaryContainer   = SecondaryContainerLight,
+    onSecondaryContainer = AccentOrange,
+    tertiary             = AccentOrangeLight,
+    onTertiary           = OnPrimary,
+    background           = BackgroundLight,
+    onBackground         = OnSurface,
+    surface              = SurfaceLight,
+    onSurface            = OnSurface,
+    surfaceVariant       = SurfaceVariantLight,
+    onSurfaceVariant     = OnSurfaceVariant,
+    outline              = OutlineColor,
+    error                = ErrorColor
 )
 
 @Composable

@@ -18,25 +18,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
+import com.example.studiora.viewmodel.AuthViewModel
+import com.example.studiora.viewmodel.ResetState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForgotPasswordScreen(navController: NavController) {
+fun ForgotPasswordScreen(navController: NavController, authViewModel: AuthViewModel) {
     var email by remember { mutableStateOf("") }
     val context = LocalContext.current
-    var isLoading by remember { mutableStateOf(false) }
+    val resetState by authViewModel.resetState.collectAsStateWithLifecycle()
+    val isLoading = resetState is ResetState.Loading
+
+    LaunchedEffect(resetState) {
+        when (val state = resetState) {
+            is ResetState.Success -> {
+                Toast.makeText(context, "Password reset email sent! Check your inbox.", Toast.LENGTH_LONG).show()
+                authViewModel.resetPasswordState()
+                navController.popBackStack()
+            }
+            is ResetState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                authViewModel.resetPasswordState()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Reset Password",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
+                title = { Text("Reset Password", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -155,31 +168,7 @@ fun ForgotPasswordScreen(navController: NavController) {
                                     !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                                         Toast.makeText(context, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
                                     }
-                                    else -> {
-                                        isLoading = true
-                                        FirebaseAuth.getInstance()
-                                            .sendPasswordResetEmail(email)
-                                            .addOnCompleteListener { task ->
-                                                isLoading = false
-                                                if (task.isSuccessful) {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Password reset email sent successfully! Check your inbox.",
-                                                        Toast.LENGTH_LONG
-                                                    ).show()
-                                                    navController.popBackStack()
-                                                } else {
-                                                    val errorMessage = when {
-                                                        task.exception?.message?.contains("network") == true ->
-                                                            "Network error. Check your internet connection."
-                                                        task.exception?.message?.contains("no user record") == true ->
-                                                            "No account found with this email. Please register first."
-                                                        else -> "Failed to send reset email. Please try again."
-                                                    }
-                                                    Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
-                                                }
-                                            }
-                                    }
+                                    else -> authViewModel.sendPasswordReset(email)
                                 }
                             },
                             modifier = Modifier
